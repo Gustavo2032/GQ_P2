@@ -1,103 +1,109 @@
 # Loja Aurora
 
-Loja virtual local para as práticas de Gestão da Qualidade e Teste de Software. O navegador usa HTML, CSS e JavaScript. O servidor é Node.js, sem dependências externas, e grava os dados em um arquivo JSON nesta máquina.
+Loja Aurora é uma aplicação de e-commerce local usada para praticar qualidade e teste de software. O projeto permite explorar fluxos de clientes e administradores, regras de compra e persistência de pedidos com dados fictícios.
 
-Compare o comportamento do sistema com [REQUISITOS.md](REQUISITOS.md). Quando um teste falhar, corrija o código e conserve o teste para as aulas seguintes.
+## O que é possível testar
 
-## Preparação
+- Cadastro, login e logout de clientes
+- Catálogo, busca, filtros e carrinho
+- Estoque, cupons, descontos, frete e finalização de pedidos
+- Histórico de pedidos e permissões de cliente e administrador
+- Testes unitários, de integração, de interface, acessibilidade, carga e estresse
 
-1. Instale o Node.js 18 ou superior: <https://nodejs.org/>
-2. Abra esta pasta no VS Code.
-3. No terminal, cada dupla redefine a base e inicia o servidor:
+## Tecnologias
+
+- Interface: HTML, CSS e JavaScript
+- Servidor: Node.js 18 ou superior, usando módulos nativos
+- Persistência: arquivo JSON local
+- Testes: `node:test`, Playwright e k6
+
+## Executar a aplicação
+
+Instale o [Node.js 18 ou superior](https://nodejs.org/) e abra a pasta do projeto no terminal.
 
 ```bash
 npm run reset
 npm start
 ```
 
-4. Acesse <http://127.0.0.1:3000>
+Abra <http://127.0.0.1:3000>. Para encerrar o servidor, pressione `Ctrl+C` no terminal.
 
-Não é necessário executar `npm install`.
+`npm run reset` recria a base de teste e substitui os cadastros e pedidos locais. Pare o servidor antes de executar o reset. A aplicação usa módulos nativos do Node.js; não é necessário instalar dependências para iniciar apenas o servidor.
 
-Para encerrar o servidor, use Ctrl+C no terminal.
+## Executar os testes
 
-Se a porta 3000 estiver ocupada, inicie com outra porta:
-
-```bash
-# Windows PowerShell
-$env:PORT=3001; npm start
-```
-
-## Reset
-
-`npm run reset` recria `data/db.json` a partir somente de `data/dataset_loja_6000.json`. O mesmo comando está disponível como `npm run seed` e `npm run restore`.
-
-Pare o servidor antes de executar o reset e inicie-o de novo depois. Cada execução substitui a base didática inteira, inclusive cadastros e pedidos feitos em aula, e volta aos mesmos identificadores, estoques e pedidos. Rodar o comando outra vez não duplica registros.
-
-O reset não altera `dataset_loja_6000.json` e não grava arquivos fora da pasta da loja. Os arquivos separados de produtos, clientes, cupons e pedidos não são importados junto com o JSON consolidado.
-
-O estoque gravado é o do dataset. Os pedidos históricos não descontam esse estoque de novo.
-
-## Contas locais
-
-A senha abaixo existe só para estas três contas. Ela não aparece na interface.
-
-| E-mail | Senha | Perfil |
-| --- | --- | --- |
-| cliente-a@loja.test | SenhaDidatica123! | cliente |
-| cliente-b@loja.test | SenhaDidatica123! | cliente |
-| admin@loja.test | SenhaDidatica123! | administrador |
-
-As demais contas do dataset não usam essa senha. Contas marcadas como inativas não entram.
-
-## Fixtures
-
-- `produto-teste`: R$ 150,00 e estoque 5.
-- `pedido-cliente-b`: pedido do `cliente-b`.
-- `ANTIGO`: 20%, vencido em 06/10/2026.
-- `VINTE`: 20%, válido até 31/12/2026.
-- `CINCO`: 5%, válido até 31/12/2026.
-
-Nos testes de validade de cupom, fixe o relógio em `2026-10-07T15:00:00.000Z` com `setClock` de `src/domain/clock.js`.
-
-## Dataset e diferenças de schema
-
-O arquivo consolidado guarda valores em centavos inteiros e itens de pedido em lista própria. A loja converte o preço para reais na interface e mantém os centavos originais. Os identificadores são preservados.
-
-| Dataset | Loja |
-| --- | --- |
-| produtos.nome, precoCentavos, estoque, ativo | products.name, price e priceCents, stock, active |
-| clientes.papel (`cliente` ou `admin`) | users.role (`customer` ou `admin`) |
-| cupons.codigo, percentual, validade | coupons.code, type `percent`, value, expiresAt |
-| pedidos.clienteId, itensPedido | orders.userId e orders.items |
-| endereco.logradouro, numero, bairro, cidade, uf, cep | address.street, number, district, city, state, zip |
-
-O catálogo público lista apenas produtos ativos. O frete e os totais dos pedidos importados permanecem os do dataset, em que o frete cobrado é de R$ 20,00. Novas cotações seguem as regras descritas em REQUISITOS.md.
-
-## Testes
+### Testes Node.js
 
 ```bash
 npm test
 ```
 
-A pasta `tests` traz exemplos com `node:test`. O guia para ampliá-los está em [tests/README.md](tests/README.md). As regras de negócio ficam em `src/domain` e podem ser testadas sem abrir a interface.
+Esse comando executa os arquivos `*.test.js` em `tests/`, incluindo as subpastas `unit/` e `integration/`.
 
-## Volume para a prática de desempenho
+### Testes de interface com Playwright
 
-O comando abaixo recria a base com o catálogo inicial, os pedidos iniciais e um volume adicional reproduzível:
+Instale as dependências de desenvolvimento e o navegador Chromium uma vez:
 
 ```bash
-npm run generate -- --products 4000 --orders 2000
+npm install
+npx playwright install chromium
 ```
 
-Os dois números podem ser alterados. Reinicie o servidor depois de gerar os dados. Ao terminar a prática, cada dupla executa `npm run reset` para voltar aos mesmos dados.
+Depois, execute:
 
-## Organização
+```bash
+npx playwright test
+```
 
-- `public` — interface
-- `src/domain` — regras de negócio
-- `src/services` — fechamento e histórico
-- `src/persistence` — leitura e gravação da base
-- `src/routes` — API HTTP
-- `data` — dados fictícios e a base usada em execução
-- `tests` — testes automatizados
+O relatório HTML é salvo em `reports/playwright-report/`.
+
+### Testes de carga e estresse com k6
+
+Os scripts usam a porta `3001`. Em um terminal PowerShell, inicie o servidor nessa porta:
+
+```powershell
+$env:PORT=3001
+npm start
+```
+
+Em outro terminal, execute os cenários:
+
+```bash
+k6 run tests/carga/carga.js
+k6 run tests/carga/estresse.js
+```
+
+A carga cresce até 5 usuários virtuais. O estresse cresce em etapas até 15 usuários virtuais e depois reduz a carga. Os resultados aparecem no terminal. Execute esses cenários apenas na aplicação local ou em ambiente autorizado.
+
+## Contas e dados de teste
+
+As contas abaixo são fictícias e existem para a prática:
+
+| E-mail | Senha | Perfil |
+| --- | --- | --- |
+| `cliente-a@loja.test` | `SenhaDidatica123!` | Cliente |
+| `cliente-b@loja.test` | `SenhaDidatica123!` | Cliente |
+| `admin@loja.test` | `SenhaDidatica123!` | Administrador |
+
+Fixtures úteis:
+
+- `produto-teste`: R$ 150,00, estoque 5
+- `ANTIGO`: cupom vencido
+- `VINTE`: cupom de 20%, válido até 31/12/2026
+- `CINCO`: cupom de 5%, válido até 31/12/2026
+
+`npm run reset` restaura os dados iniciais descritos em `data/dataset_loja_6000.json` e recria `data/db.json`.
+
+## Estrutura do projeto
+
+```text
+public/       interface web
+src/domain/   regras de negócio
+src/routes/   rotas da API
+src/services/ operações de checkout e histórico
+src/persistence/ acesso aos dados JSON
+data/         dataset e base local
+tests/       testes automatizados e cenários k6
+```
+
+Os requisitos funcionais e de qualidade estão em [REQUISITOS.md](REQUISITOS.md). A base local usa dados didáticos; não a exponha como serviço público.

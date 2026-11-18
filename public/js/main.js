@@ -20,6 +20,10 @@ Aurora.applyRoute = function applyRoute() {
     view = "orders";
     orderId = decodeURIComponent(hash.slice("#pedido/".length));
   }
+  if (view === "admin" && (!Aurora.state.user || Aurora.state.user.role !== "admin")) {
+    location.hash = Aurora.state.user ? "#catalogo" : "#entrar";
+    return;
+  }
   for (const section of document.querySelectorAll("[data-view]")) {
     section.hidden = section.dataset.view !== view;
   }

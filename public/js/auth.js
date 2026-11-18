@@ -17,7 +17,7 @@ function renderSession() {
   chip.textContent = `Olá, ${Aurora.state.user.name}`;
   login.hidden = true;
   logout.hidden = false;
-  admin.hidden = false;
+  admin.hidden = Aurora.state.user.role !== "admin";
 }
 
 Aurora.renderSession = renderSession;
